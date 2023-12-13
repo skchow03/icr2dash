@@ -19,3 +19,25 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+This project includes a number of third-party dependencies, each with their own license. Below is a summary of the license information for each dependency.
+
+PyQt5
+Version: 5.15.9
+License: GNU General Public License v3 (GPLv3) with exceptions for use in certain commercial applications.
+License Details: https://www.riverbankcomputing.com/static/Docs/PyQt5/introduction.html#license
+
+Pillow (PIL Fork)
+Version: 9.4.0
+License: Historical Permission Notice and Disclaimer (HPND) License.
+License Details: https://github.com/python-pillow/Pillow/blob/main/LICENSE
+
+win32gui (part of PyWin32)
+Version: 306
+License: Python Software Foundation License.
+License Details: https://pypi.org/project/pywin32/
+
+NumPy
+Version: 1.24.3
+License: BSD 3-Clause "New" or "Revised" License.
+License Details: https://numpy.org/doc/stable/license.html
