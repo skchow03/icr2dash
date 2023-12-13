@@ -672,25 +672,3 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
-
-This project includes a number of third-party dependencies, each with their own license. Below is a summary of the license information for each dependency.
-
-PyQt5
-Version: 5.15.9
-License: GNU General Public License v3 (GPLv3) with exceptions for use in certain commercial applications.
-License Details: https://www.riverbankcomputing.com/static/Docs/PyQt5/introduction.html#license
-
-Pillow (PIL Fork)
-Version: 9.4.0
-License: Historical Permission Notice and Disclaimer (HPND) License.
-License Details: https://github.com/python-pillow/Pillow/blob/main/LICENSE
-
-win32gui (part of PyWin32)
-Version: 306
-License: Python Software Foundation License.
-License Details: https://pypi.org/project/pywin32/
-
-NumPy
-Version: 1.24.3
-License: BSD 3-Clause "New" or "Revised" License.
-License Details: https://numpy.org/doc/stable/license.html
