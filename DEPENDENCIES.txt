@@ -1,0 +1,20 @@
+Dependencies and Their Licenses
+===============================
+
+This project uses several third-party libraries, each under its own license:
+
+1. PyQt5
+   - License: GNU General Public License v3 (GPLv3) with exceptions for commercial use
+   - Details: [PyQt5 Licensing](https://www.riverbankcomputing.com/static/Docs/PyQt5/introduction.html#license)
+
+2. Pillow (PIL Fork)
+   - License: Historical Permission Notice and Disclaimer (HPND) License
+   - Details: [Pillow License](https://github.com/python-pillow/Pillow/blob/main/LICENSE)
+
+3. win32gui (part of PyWin32)
+   - License: Python Software Foundation License
+   - Details: [PyWin32 License](https://github.com/mhammond/pywin32/blob/main/LICENSE.txt)
+
+4. NumPy
+   - License: BSD 3-Clause "New" or "Revised" License
+   - Details: [NumPy License](https://numpy.org/doc/stable/license.html)
