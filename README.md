@@ -16,7 +16,10 @@ ICR2DASH will automatically close when you exit ICR2.
 
 Troubleshooting
 LCD Screen Reading: If the LCD screen isn't read correctly, press Ctrl-S during gameplay to capture a screenshot for adjustments in DASH_READER.INI.
-Cockpit Alignment: Manually adjust using Ctrl-arrow keys or modify the ICR2DASH.INI for consistent alignment.
+Cockpit Alignment: Modify the ICR2DASH.INI for consistent alignment.
 Cockpit Detection: Adjust the detection settings in ICR2DASH.INI if the cockpit overlay isn't appearing correctly.
+Dashboard shakes in Detroit tunnel: Push Ctrl-L to lock the dashboard. The program will continue to work properly as long as you don't move the window.
 
 Refer to DEPENDENCIES for list of other Python libraries used in this project.
+
+Thanks to GPLaps for help improving the cockpit textures.
