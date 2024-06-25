@@ -40,7 +40,7 @@ def crop_to_aspect_ratio(image, aspect_ratio=4/3):
         top = (img_height - new_height) // 2
         return image.crop((0, top, img_width, top + new_height))
 
-def crop_black_borders_with_coords(image):
+def crop_black_borders_with_coords(image, specific_crop_box=None):
     # Convert image to grayscale
     grayscale = image.convert("L")
     
@@ -50,6 +50,12 @@ def crop_black_borders_with_coords(image):
     non_empty_rows = np.where(np_img.max(axis=1) > 0)[0]
     
     # Calculate cropping box
+    if specific_crop_box:
+        crop_box = specific_crop_box
+        cropped_image = image.crop(crop_box)
+        resized_image = resize_image(cropped_image, 1280, 960)
+        return resized_image, crop_box
+
     if non_empty_rows.size and non_empty_columns.size:
         crop_box = (
             min(non_empty_columns),
