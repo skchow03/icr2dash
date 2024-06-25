@@ -1,6 +1,9 @@
 ICR2DASH - Cockpit Overlay for Papyrus IndyCar Racing 2
 Enhance your ICR2 gaming experience with ICR2DASH, an interactive dashboard overlay tool for ICR2, designed to work with DOSBox. It read real-time game data from the default cockpit view and draws a 1980s style analog dashboard to improve immersion when simulating the 1980s.
 
+Version 2.0
+June 24, 2024
+
 Compatibility: Tested on Windows 10 with ICR2 running in windowed mode in DOSBox ECE and DOSBox Staging.
 
 System Requirements
