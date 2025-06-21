@@ -14,10 +14,10 @@ def get_title_bar_height(hwnd):
     title_bar_height = (win_rect[3] - win_rect[1] - client_rect[3]) - border_width
     return title_bar_height
 
-def find_dosbox_window():
+def find_dosbox_window(app_keywords):
     def callback(hwnd, extra):
         title = win32gui.GetWindowText(hwnd)
-        if "DOSBOX" in title.upper() and "INDYCAR" in title.upper():
+        if all(word in title.upper() for word in app_keywords):
             extra.append(hwnd)
     hwnds = []
     win32gui.EnumWindows(callback, hwnds)

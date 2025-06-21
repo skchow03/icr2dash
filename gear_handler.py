@@ -1,3 +1,21 @@
+"""
+GearHandler Module
+
+This module defines the `GearHandler` class, which manages the gear-shifting logic for the ICR2 racing game.
+It supports both H-pattern shifters and clutch systems, allowing for realistic gear change behavior, including grinding sounds for improper shifts.
+
+Features:
+- Detects gear changes and clutch usage.
+- Simulates realistic gear grinding when shifting without a clutch.
+- Sends appropriate keypresses to the game for upshifts and downshifts.
+- Supports configurable delays and key bindings.
+
+Dependencies:
+- `keyboard`: For detecting and simulating keypresses.
+- `pygame`: For playing gear grinding sound effects.
+- `utils`: Utility functions for playing/stopping sounds.
+"""
+
 import keyboard
 import pygame
 import time
@@ -6,7 +24,31 @@ from enum import Enum
 from utils import play_gear_grinding_sound, stop_gear_grinding_sound
 
 class GearHandler:
+    """
+    Manages gear-shifting logic, including detection, validation, and keypress simulation.
+
+    Attributes:
+        gs (GameState): The current game state.
+        overlay_handler (OverlayHandler): Reference to the overlay handler for state synchronization.
+        config (ConfigParser): Configuration settings for gear handling.
+        gear_grinding_sound (pygame.mixer.Sound): Sound effect for gear grinding.
+        gear_grinding_channel (pygame.mixer.Channel): Audio channel for playing the grinding sound.
+        hshifter_on (bool): Whether the H-pattern shifter is enabled.
+        clutch_on (bool): Whether the clutch system is enabled.
+        target_gear (int): The gear the player intends to shift to.
+        clutch_engaged (bool): Whether the clutch is currently engaged.
+    """
+
     def __init__(self, game_state, config, overlay_handler):
+        """
+        Initializes the GearHandler with game state, configuration, and overlay handler.
+
+        Args:
+            game_state (GameState): The current game state object.
+            config (ConfigParser): Configuration settings for gear handling.
+            overlay_handler (OverlayHandler): Reference to the overlay handler.
+        """
+
         self.gs = game_state
         self.overlay_handler = overlay_handler
         self.config = config
@@ -57,11 +99,21 @@ class GearHandler:
         print(f"  Clutch on: {self.clutch_on}")
 
     def send_keypress(self, key):
-        """Send a keypress to the system."""
+        """
+        Sends a keypress to the system.
+
+        Args:
+            key (str): The key to simulate pressing.
+        """
         keyboard.send(key)
 
     def detect_pressed_gear(self):
-        """Detect which shifter gear key is currently pressed."""
+        """
+        Detects which gear key is currently pressed for the H-pattern shifter.
+
+        Returns:
+            int: The gear number (1-6) if a gear key is pressed, 0 otherwise.
+        """
         if keyboard.is_pressed(self.shifter_gear1_key):
             return 1
         if keyboard.is_pressed(self.shifter_gear2_key):
@@ -77,7 +129,18 @@ class GearHandler:
         return 0
 
     def gear_change_listener(self, gs, stop_event):
+        """
+        Monitors gear and clutch inputs and simulates gear changes accordingly.
 
+        This method runs in a separate thread and continuously listens for:
+        - H-shifter gear changes.
+        - Clutch engagement/disengagement.
+        - Proper and improper gear shifts (triggering grinding sounds as needed).
+
+        Args:
+            gs (GameState): The game state object to synchronize with.
+            stop_event (threading.Event): Event used to signal when to stop the listener.
+        """
         self.lock_shift = False
 
         if self.clutch_on:
