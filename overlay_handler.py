@@ -75,7 +75,7 @@ class OverlayHandler:
             keyword.strip().upper() 
             for keyword in config.get('General', 'app_keywords').split(',')
             ]
-        print (f'Watching for window with following keywords: {self.app_keywords}')
+        print (f'Watching for window with any of the following keywords: {self.app_keywords}')
         
         # Initialize the game state object
         self.gs.boost_drop_rate_per_second = self.boost_drop_rate_per_second
