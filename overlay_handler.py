@@ -22,7 +22,7 @@ Usage:
 """
 
 import win32gui
-from window_capture import find_dosbox_window, capture_window, get_title_bar_height
+from window_capture import find_icr2_window, find_window_with_keywords, capture_window, get_title_bar_height
 from image_processing import crop_black_borders_with_coords, is_in_cockpit_view
 from dashboard_reader import read_dashboard, plot_lcd_locations
 from overlay import CockpitOverlay
@@ -30,6 +30,7 @@ import threading
 from gear_handler import GearHandler
 import keyboard
 from telemetry import telemetry
+
 
 class OverlayHandler:
     """
@@ -68,14 +69,33 @@ class OverlayHandler:
         self.lcd_threshold = config.getint('General', 'lcd_detect_threshold')
         self.cockpit_visible = True
 
+        self.keepalive_seen = False
+        self.dosbox_mode = config.get('General', 'dosbox_mode', fallback='no').lower() == 'yes'
+        if self.dosbox_mode:
+            print("Running in DOSBox compatibility mode")
+
+
         self.last_speed = 0
         self.last_color = 'green'
 
         self.app_keywords = [
             keyword.strip().upper() 
             for keyword in config.get('General', 'app_keywords').split(',')
-            ]
-        print (f'Watching for window with any of the following keywords: {self.app_keywords}')
+            if keyword.strip()
+        ]
+        print(f"Driving window keywords ({len(self.app_keywords)}): {self.app_keywords}")
+
+        self.keepalive_keywords = [
+            keyword.strip().upper()
+            for keyword in config.get('General', 'keepalive_keywords', fallback='').split(',')
+            if keyword.strip()
+        ]
+        self.keepalive_mode = config.get('General', 'keepalive_mode', fallback='any')
+        if self.keepalive_keywords:
+            print(f"Keepalive window keywords ({self.keepalive_mode}): {self.keepalive_keywords}")
+        else:
+            print("No keepalive keywords defined.")
+
         
         # Initialize the game state object
         self.gs.boost_drop_rate_per_second = self.boost_drop_rate_per_second
@@ -150,110 +170,186 @@ class OverlayHandler:
         self.cockpit_overlay = CockpitOverlay()  # Initialize the CockpitOverlay
     
     def update_loop(self):
-        """
-        Main update loop for the overlay.
+        # Driving window for overlay
+        hwnd, title = find_icr2_window(
+            self.app_keywords,
+            mode=self.config.get('General', 'window_match_mode', fallback='any')
+        )
 
-        Checks for the presence of the DOSBox window, updates the overlay's
-        position and data if the game is running, and manages user inputs.
-        If the DOSBox window is not found, the application exits.
-        """
-        hwnd = find_dosbox_window(self.app_keywords)
-    
-        # Ensure DOSBox window is present and handle overlay accordingly
+        # Keepalive window check
+        keepalive_keywords = [
+            keyword.strip().upper()
+            for keyword in self.config.get('General', 'keepalive_keywords', fallback='').split(',')
+            if keyword.strip()
+        ]
+        keepalive_mode = self.config.get('General', 'keepalive_mode', fallback='any')
+
+        _, keepalive_title = (None, None)
+        if keepalive_keywords:
+            _, keepalive_title = find_window_with_keywords(keepalive_keywords, keepalive_mode)
+
         if hwnd:
             if not self.dosbox_window_opened:
                 self.dosbox_window_opened = True
-                print('ICR2 DOSBox window detected')
+                print(f"Driving window detected: '{title}' (hwnd={hwnd})")
             self.handle_dosbox_overlay(hwnd)
         else:
             if self.dosbox_window_opened:
-                print('Script ending')
-                self.cockpit_overlay.hide()  # Hide overlay if DOSBox window is missing
-                self.app.quit()  # Quit the application
-            self.cockpit_overlay.hide()  # Hide overlay if DOSBox window is missing
-            self.stop_gear_listener()  # Stop the gear listener thread
+                print("Driving window closed, hiding overlay (waiting for it to return)")
+                self.dosbox_window_opened = False
+            self.cockpit_overlay.hide()
+            self.stop_gear_listener()
+
+            # Quit if *no* keepalive window is present
+            # Track whether we've ever seen a keepalive window
+            if keepalive_title:
+                if not self.keepalive_seen:
+                    print(f"First keepalive window detected: '{keepalive_title}'")
+                    self.keepalive_seen = True
+            else:
+                if self.keepalive_seen:
+                    print("Keepalive window has disappeared, exiting overlay.")
+                    self.app.quit()
+
 
     def handle_dosbox_overlay(self, hwnd):
         """
-        Update the overlay in sync with the DOSBox window state.
-
-        Args:
-            hwnd (int): Handle to the DOSBox window.
+        Update the overlay in sync with the game window.
+        Uses the old v3.1 capture logic for DOSBox, and v3.2 logic for Windy.
         """
-        # Validate window handle and update overlay
-        if win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd) and hwnd == win32gui.GetForegroundWindow():
-            self.last_screenshot = capture_window(hwnd)
 
-            cropped_screenshot, coords = crop_black_borders_with_coords(self.last_screenshot, self.cropbox)
+        try:
+            if self.dosbox_mode:
+                # --- v3.1 DOSBox path ---
+                if win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd) and hwnd == win32gui.GetForegroundWindow():
+                    self.last_screenshot = capture_window(hwnd)
 
-            if is_in_cockpit_view(cropped_screenshot, self.cockpit_pixels) and self.cockpit_on:
-                # Read dashboard data
-                rpm, boost, temp, fuel, mph, gear, f_rollbar, r_rollbar, brake, boost_knob, laptime = read_dashboard(cropped_screenshot, self.lcd_threshold)
-#                print (laptime)
-                self.gs.update(rpm, boost, temp, fuel, mph, gear, f_rollbar, r_rollbar, brake, boost_knob, laptime)
+                    cropped_screenshot, coords = crop_black_borders_with_coords(
+                        self.last_screenshot, self.cropbox
+                    )
 
-                #self.telemetry.update(laptime, fuel)
+                    if is_in_cockpit_view(cropped_screenshot, self.cockpit_pixels) and self.cockpit_on:
+                        rpm, boost, temp, fuel, mph, gear, f_rollbar, r_rollbar, brake, boost_knob, laptime = read_dashboard(
+                            cropped_screenshot, self.lcd_threshold
+                        )
+                        self.gs.update(rpm, boost, temp, fuel, mph, gear,
+                                    f_rollbar, r_rollbar, brake, boost_knob, laptime)
 
-                self.cockpit_overlay.setGauges(self.gs.rpm, self.gs.cur_boost, self.gs.temp, self.gs.fuel, self.gs.mph, self.gs.gear, self.gs.f_rollbar, self.gs.r_rollbar, self.gs.brake, self.gs.boost_knob)
+                        self.cockpit_overlay.setGauges(
+                            self.gs.rpm, self.gs.cur_boost, self.gs.temp, self.gs.fuel,
+                            self.gs.mph, self.gs.gear, self.gs.f_rollbar, self.gs.r_rollbar,
+                            self.gs.brake, self.gs.boost_knob
+                        )
 
-                # Handle HUD
-                # speed_diff = mph - self.last_speed
-                # if speed_diff > 0:
-                #     color = 'green'
-                #     self.last_color = 'green'
-                # elif speed_diff < 0:
-                #     color = 'red'
-                #     self.last_color = 'red'
-                # else:
-                #     color = self.last_color
-                # self.last_speed = mph
-                # self.cockpit_overlay.clear_hud_text()
-                # self.cockpit_overlay.add_hud_text(str(mph),0.5,0.5,color)
-                
+                        if self.cockpit_visible:
+                            self.cockpit_overlay.show()
+                        else:
+                            self.cockpit_overlay.hide()
 
+                        if self.hshifter_on:
+                            self.start_gear_listener()
+                    else:
+                        self.cockpit_overlay.hide()
+                        if self.hshifter_on:
+                            self.stop_gear_listener()
 
-                if self.cockpit_visible:
-                    self.cockpit_overlay.show()
+                    win_rect = win32gui.GetWindowRect(hwnd)
+                    win_x, win_y = win_rect[0], win_rect[1]
+                    title_bar_height = get_title_bar_height(hwnd)
+
+                    if not self.overlay_locked:
+                        self.cockpit_overlay.setPositionAndSize(
+                            coords[0] + win_x + self.x_adjustment,
+                            coords[1] + win_y + title_bar_height + self.y_adjustment,
+                            coords[2] - coords[0],
+                            coords[3] - coords[1]
+                        )
+
+                    self.cockpit_overlay.update()
                 else:
                     self.cockpit_overlay.hide()
-
-
-                if self.hshifter_on:            
-                   self.start_gear_listener()  # Start the gear listener thread
+                    if self.hshifter_on:
+                        self.stop_gear_listener()
 
             else:
-                self.cockpit_overlay.hide()
-                if self.hshifter_on:
-                    self.stop_gear_listener()  # Stop the gear listener thread
-    
-            win_rect = win32gui.GetWindowRect(hwnd)
-            win_x, win_y = win_rect[0], win_rect[1]
-            title_bar_height = get_title_bar_height(hwnd)
-    
-            if not self.overlay_locked:
-                self.cockpit_overlay.setPositionAndSize(
-                    coords[0] + win_x + self.x_adjustment, 
-                    coords[1] + win_y + title_bar_height + self.y_adjustment, 
-                    coords[2] - coords[0], 
-                    coords[3] - coords[1]
+                # --- v3.2 Windy path ---
+                if not win32gui.IsWindow(hwnd) or not win32gui.IsWindowVisible(hwnd):
+                    raise RuntimeError("Window handle is no longer valid")
+
+                if hwnd != win32gui.GetForegroundWindow():
+                    self.cockpit_overlay.hide()
+                    self.stop_gear_listener()
+                    return
+
+                self.last_screenshot = capture_window(hwnd)
+                cropped_screenshot, coords = crop_black_borders_with_coords(
+                    self.last_screenshot, self.cropbox
                 )
 
-            self.cockpit_overlay.update()
-        else:
+                if is_in_cockpit_view(cropped_screenshot, self.cockpit_pixels) and self.cockpit_on:
+                    rpm, boost, temp, fuel, mph, gear, f_rollbar, r_rollbar, brake, boost_knob, laptime = read_dashboard(
+                        cropped_screenshot, self.lcd_threshold
+                    )
+                    self.gs.update(rpm, boost, temp, fuel, mph, gear,
+                                f_rollbar, r_rollbar, brake, boost_knob, laptime)
+
+                    self.cockpit_overlay.setGauges(
+                        self.gs.rpm, self.gs.cur_boost, self.gs.temp, self.gs.fuel,
+                        self.gs.mph, self.gs.gear, self.gs.f_rollbar, self.gs.r_rollbar,
+                        self.gs.brake, self.gs.boost_knob
+                    )
+
+                    if self.cockpit_visible:
+                        self.cockpit_overlay.show()
+                    else:
+                        self.cockpit_overlay.hide()
+
+                    if self.hshifter_on:
+                        self.start_gear_listener()
+                else:
+                    self.cockpit_overlay.hide()
+                    if self.hshifter_on:
+                        self.stop_gear_listener()
+
+                win_rect = win32gui.GetWindowRect(hwnd)
+                win_x, win_y = win_rect[0], win_rect[1]
+                title_bar_height = get_title_bar_height(hwnd)
+
+                if not self.overlay_locked:
+                    self.cockpit_overlay.setPositionAndSize(
+                        coords[0] + win_x + self.x_adjustment,
+                        coords[1] + win_y + title_bar_height + self.y_adjustment,
+                        coords[2] - coords[0],
+                        coords[3] - coords[1]
+                    )
+
+                self.cockpit_overlay.update()
+
+        except Exception as e:
+            # Catch invalid handle or any race condition
             self.cockpit_overlay.hide()
-            if self.hshifter_on:
-                self.stop_gear_listener()  # Stop the gear listener thread
+            self.stop_gear_listener()
 
 
     def take_screenshot(self):
         """Take a screenshot of the cropped_screenshot without the overlay."""
 
-        hwnd = find_dosbox_window(self.app_keywords)
+        hwnd, title = find_icr2_window(
+            self.app_keywords,
+            mode=self.config.get('General', 'window_match_mode', fallback='any')
+        )
+
+        if hwnd is None:
+            print("No window found for screenshot")
+            return
+
+        print(f"Taking screenshot from window: '{title}' (hwnd={hwnd})")
         self.last_screenshot = capture_window(hwnd)
 
         if self.last_screenshot is not None:
             cropped_screenshot, _ = crop_black_borders_with_coords(self.last_screenshot)
             plot = plot_lcd_locations(cropped_screenshot)
-            screenshot_path = f'screenshot.png'
+            screenshot_path = "screenshot.png"
             plot.save(screenshot_path)
-            print(f'Screenshot saved as {screenshot_path}')
+            print(f"Screenshot saved as {screenshot_path}")
+

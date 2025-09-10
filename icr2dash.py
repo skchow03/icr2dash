@@ -21,7 +21,7 @@ Dependencies:
 - Custom modules: `game_state`, `overlay_handler`, and `utils`.
 
 Author: SK Chow
-Version: 2.1
+Version: 3.3
 """
 
 import sys
@@ -51,7 +51,7 @@ def main():
     """
 
     # Print startup information and user instructions
-    print('ICR2 cockpit overlay script started - v3.1')
+    print('ICR2 cockpit overlay script started - v3.3')
     print('Configurations can be edited in icr2dash.ini, overlay.ini and dash_reader.ini')
     print('Leave this program running in the background when you run ICR2 in DOSBox')
     print('Once you are in ICR2:')
