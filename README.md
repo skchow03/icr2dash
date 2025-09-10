@@ -3,8 +3,9 @@ Enhance your ICR2 gaming experience with ICR2DASH, an interactive dashboard over
 
 Version 2.0 - June 24, 2024
 Version 3.1 - June 21, 2025
+Version 3.3 - September 9, 2025
 
-Compatibility: Tested on Windows 10 with ICR2 running in windowed mode in DOSBox ECE and DOSBox Staging. Version 2.1 adds Dosbox-Rendition support.
+Compatibility: Tested on Windows 10 with ICR2 running in windowed mode in DOSBox ECE and DOSBox Staging. Version 3.1 added Dosbox-Rendition support, but this may no longer work as of Version 3.3.
 
 System Requirements
 DOS version of ICR2 (INDYCAR.EXE) running in windowed mode on DOSBox ECE or DOSBox Staging (other DOSBox versions have not been tested)
@@ -13,7 +14,7 @@ Installation
 Download the latest version of ICR2DASH from the Releases page on GitHub.
 
 Usage
-Start ICR2DASH.EXE and keep it running in the background.
+Start ICR2DASH and keep it running in the background.
 Launch DOSBox and ICR2 as usual (Note: Full-screen mode is not supported).
 ICR2DASH will automatically close when you exit ICR2.
 
