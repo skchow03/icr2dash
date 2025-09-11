@@ -21,7 +21,7 @@ Dependencies:
 - Custom modules: `game_state`, `overlay_handler`, and `utils`.
 
 Author: SK Chow
-Version: 3.3
+Version: 3.4
 """
 
 import sys
@@ -51,13 +51,12 @@ def main():
     """
 
     # Print startup information and user instructions
-    print('ICR2 cockpit overlay script started - v3.3')
+    print('ICR2 cockpit overlay script started - v3.4')
     print('Configurations can be edited in icr2dash.ini, overlay.ini and dash_reader.ini')
-    print('Leave this program running in the background when you run ICR2 in DOSBox')
+    print('Leave this program running in the background when you run ICR2 in DOSBox or Windy')
     print('Once you are in ICR2:')
     print('   Ctrl-S to take a screenshot with LCD reading points.')
-    print('   Ctrl-L to lock the DOSBox window location (prevents errors in black tunnels)')
-    #print('   Ctrl-T to reset telemetry to lap zero')
+    print('   Ctrl-L to lock the window location (prevents errors in black tunnels)')
     print('   Ctrl-O to toggle cockpit overlay on/off')
 
     # Load configuration file and validate its existence
@@ -65,7 +64,7 @@ def main():
     print(f"Loading config file at: {os.path.abspath(config_path)}")
     
     if not os.path.exists(config_path):
-        print("Configuration file not found!")
+        print("Configuration file neot found!")
         sys.exit(1)
 
     # Read configuration settings

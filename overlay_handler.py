@@ -29,7 +29,6 @@ from overlay import CockpitOverlay
 import threading
 from gear_handler import GearHandler
 import keyboard
-from telemetry import telemetry
 
 
 class OverlayHandler:
